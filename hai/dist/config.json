@@ -1,0 +1,8 @@
+{
+    "PLC_IP": "172.25.4.204",
+    "PLC_PORT": 8000,
+    "start_address_read": 1000,
+    "start_address_write": 500,
+    "read_from": 1040,
+    "read_to": 1090
+}
