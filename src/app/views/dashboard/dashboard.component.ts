@@ -121,7 +121,12 @@ export class DashboardComponent implements OnInit {
       this.check_api().subscribe(response => {
         if (response.data[0] === 1) {  
           this.checkAndAppendChart();
-          this.write_api().subscribe(() => {}); 
+          this.write_api().subscribe(() => {
+            setTimeout(() => {
+              console.log('3 seconds have passed after writing to API.');
+              // Add any additional logic here that needs to execute after the delay
+            }, 3000); // 2000 ms = 2 seconds delay
+          });
         }
       });
     }, 2000); // 1-second interval
