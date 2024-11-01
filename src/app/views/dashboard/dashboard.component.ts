@@ -27,7 +27,8 @@ import * as XLSX from 'xlsx';
 import html2canvas from 'html2canvas';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { AppConfig } from 'src/app/app-config';
-import { Observable, forkJoin, tap } from 'rxjs';
+import { interval, Observable, forkJoin, tap, of } from 'rxjs';
+import { switchMap, filter, concatMap, expand } from 'rxjs/operators';
 
 interface IChartWithMaxValue extends IChartProps {
   maxValue: number; // Add maxValue as a property
@@ -82,7 +83,7 @@ export class DashboardComponent implements OnInit {
   task_write: any = [];
   private count: number = 0; // Variable to keep track of chart additions
   private maxCharts: number = 200; // Maximum number of charts
-
+  private isWritingApi: boolean = false; // Flag to prevent overlap
   constructor(
     private http: HttpClient
   ) { }
@@ -112,20 +113,23 @@ export class DashboardComponent implements OnInit {
       }));
   }
 
+
+  lastResponseTime: number | null = null;
   ngOnInit(): void {
     this.initCharts();
-    Chart.register(zoomPlugin); // Register zoom plugin
+    Chart.register(zoomPlugin);
     this.toggleAutoAppendCharts(true);
-    // Set interval to check the boolean variable every 1 second
-    setInterval(() => {
-      this.check_api().subscribe(response => {
-        if (response.data[0] === 1) {  
-          this.checkAndAppendChart();
-          this.write_api().subscribe(() => {}); 
-        }
-      });
-    }, 2000); // 1-second interval
+    
+    interval(2000).pipe(
+        switchMap(() => this.check_api()),
+        filter(response => response.data[0] === 1),
+        tap(() => this.checkAndAppendChart()),
+        switchMap(() => this.write_api())
+    ).subscribe();
   }
+
+
+
 
   initCharts(): void {
     // Initial chart setup logic if needed
@@ -149,13 +153,27 @@ export class DashboardComponent implements OnInit {
   }
 
   addChart(): void {
+    // Prevent chart creation if the count is at the maximum
     if (this.count >= this.maxCharts) {
       console.log('Maximum number of charts reached.');
       return;
     }
   
+    // Track the current timestamp
+    const currentTime = Date.now();
+  
+    // Check if a chart should be added based on the 3-second rule
+    if (this.lastResponseTime && (currentTime - this.lastResponseTime < 3000)) {
+      console.log('Skipping chart addition due to time constraint (less than 3 seconds between additions).');
+      return;
+    }
+  
+    // Update lastResponseTime to the current timestamp
+    this.lastResponseTime = currentTime;
+  
+    // Proceed with the original chart addition logic
     const singleDataSet = [1,];
-    
+  
     // Fetch data from the API
     singleDataSet.pop();
     this.update_chart_api().subscribe(response => {
@@ -170,7 +188,7 @@ export class DashboardComponent implements OnInit {
       } else {
         console.error("API response is not in the expected format.");
       }
-    
+  
       const chartData = {
         ...this.#chartsData.initMainChart('Month', singleDataSet),
         options: {
@@ -203,19 +221,18 @@ export class DashboardComponent implements OnInit {
           },
         },
       };
-      
-    
+  
       if (chartData.data && chartData.data.datasets && chartData.data.datasets.length > 0) {
         const dataset = chartData.data.datasets[0].data as (number | null)[];
         const maxValue = this.getMaxValue(dataset);
         const currentTime = new Date().toLocaleTimeString();
-    
+  
         this.displayedCharts.push({
           ...chartData,
           maxValue: maxValue,
           time: currentTime
         });
-        
+  
         this.count++; // Increment the count of charts
         console.log(`Chart count: ${this.count}`);
   
@@ -231,6 +248,7 @@ export class DashboardComponent implements OnInit {
       }
     });
   }
+  
   
   
 

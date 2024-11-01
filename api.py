@@ -4,6 +4,7 @@ from fastapi.responses import JSONResponse
 import uvicorn
 import requests
 import random  # Import random module
+import time
 
 app = FastAPI()
 
@@ -18,6 +19,7 @@ app.add_middleware(
 
 @app.get("/read_data")
 async def read_data():
+    time.sleep(random.randint(2, 3))
     # Generate a random list of 15 numbers between 100 and 10,000
     random_data = [random.randint(100, 10000) for _ in range(50)]
     return JSONResponse(content={"data": random_data})
