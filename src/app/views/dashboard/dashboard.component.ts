@@ -97,22 +97,6 @@ export class DashboardComponent implements OnInit {
       }));
   }
 
-  check_api(): Observable<any> {
-    return this.http.get(this.APIURL + "check_data").pipe(
-      tap((res: any) => {
-        this.task_check = res.data || [];
-        console.log('API Response:', res);
-      }));
-  }
-
-  write_api(): Observable<any> {
-    return this.http.get(this.APIURL + "write_data").pipe(
-      tap((res: any) => {
-        this.task_write = res.data || [];
-        console.log('API Response:', res);
-      }));
-  }
-
 
   lastResponseTime: number | null = null;
   ngOnInit(): void {
@@ -120,11 +104,8 @@ export class DashboardComponent implements OnInit {
     Chart.register(zoomPlugin);
     this.toggleAutoAppendCharts(true);
     
-    interval(2000).pipe(
-        switchMap(() => this.check_api()),
-        filter(response => response.data[0] === 1),
-        tap(() => this.checkAndAppendChart()),
-        switchMap(() => this.write_api())
+    interval(1000).pipe(
+      tap(() => this.checkAndAppendChart())
     ).subscribe();
   }
 

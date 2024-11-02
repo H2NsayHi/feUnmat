@@ -12,7 +12,7 @@
   },
   "scripts": {
     "ng": "ng",
-    "start": "concurrently \"npm run ng serve\" \"uvicorn api:app --host 0.0.0.0 --port 8080 --reload\"",
+    "start": "concurrently \"npm run ng serve\"",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
